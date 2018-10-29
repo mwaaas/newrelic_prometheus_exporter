@@ -24,7 +24,7 @@ func preConnect(res http.ResponseWriter, req *http.Request) bool {
 	}
 
 	responseJson, err := json.Marshal(responseData)
-	if err != nil{
+	if err != nil {
 		panic(err)
 	}
 
@@ -32,14 +32,11 @@ func preConnect(res http.ResponseWriter, req *http.Request) bool {
 	return false
 }
 
-
-
-func (c * Exporter) handleMetricData(res http.ResponseWriter, req *http.Request) (results bool){
+func (c *Exporter) handleMetricData(res http.ResponseWriter, req *http.Request) (results bool) {
 	results = true
-	log.Info("Handling metric_data")
 	requestBody, err := parseRequestBodyAsJsonArray(req)
 
-	if err == nil{
+	if err == nil {
 		go c.exportNewrelicMetricData(requestBody)
 	} else {
 		log.Printf("Error reading metric data: %v", err)
@@ -47,25 +44,25 @@ func (c * Exporter) handleMetricData(res http.ResponseWriter, req *http.Request)
 	return
 }
 
-func (c *Exporter) exportNewrelicMetricData(metricData []JSON){
+func (c *Exporter) exportNewrelicMetricData(metricData []JSON) {
 	metrics := metricData[3].([]interface{})
-	for i := range metrics{
+	for i := range metrics {
 		metric := metrics[i].([]interface{})
 		metaData := metric[0].(map[string]interface{})
 		details := metric[1].([]interface{})
 		rawName := metaData["name"].(string)
 		metricName := metricNamespace
 		scope := metaData["scope"].(string)
-		for i := range details{
+		for i := range details {
 			labels := map[string]string{
-				"scope": scope,
+				"scope":       scope,
 				"metric_name": rawName,
 			}
 			labels["metric_type"] = detailsLabelName[i]
 			gauge, err := c.Gauges.Get(metricName, labels, "Newrelic metrics")
-			if err==nil{
+			if err == nil {
 				gauge.Set(details[i].(float64))
-			}else{
+			} else {
 				fmt.Println("original meta data:", metaData)
 				fmt.Println("err:", err)
 			}
@@ -73,12 +70,12 @@ func (c *Exporter) exportNewrelicMetricData(metricData []JSON){
 	}
 }
 
-func analyticData(res http.ResponseWriter, req *http.Request) bool{
+func analyticData(res http.ResponseWriter, req *http.Request) bool {
 	log.Info("Handling analytic_event_data")
 	requestBody, err := parseRequestBody(req)
-	if err != nil{
+	if err != nil {
 		log.Printf("Error reading analytic_event_data: %v", err)
-	}else{
+	} else {
 		log.Info("analytic_event_data:", requestBody)
 	}
 	return true
