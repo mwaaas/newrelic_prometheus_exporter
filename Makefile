@@ -1,6 +1,7 @@
+version = latest
 deploy:
-	docker build -t mwaaas/newrelic_prometheus_exporter:latest .
-	docker push mwaaas/newrelic_prometheus_exporter:latest
+	docker build -t mwaaas/newrelic_prometheus_exporter:$(version) .
+	docker push mwaaas/newrelic_prometheus_exporter:$(version)
 
 deploy_target:
 	docker build --target build-env -t mwaaas/newrelic_prometheus_exporter:latest_build_env .
