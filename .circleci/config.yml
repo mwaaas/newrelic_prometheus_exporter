@@ -11,6 +11,17 @@ jobs:
           name: Deploy image to hub
           command: make deploy version=$CIRCLE_TAG
 
+  deploy_latest:
+    machine:
+      image: circleci/classic:201708-01
+    working_directory: ~/newrelic_prometheus_exporter
+    steps:
+    - checkout
+
+    - run:
+        name: Deploy image to hub
+        command: make deploy version=latest
+
 
 workflows:
   version: 2
@@ -22,3 +33,8 @@ workflows:
               only: /^v.*/
             branches:
               ignore: /.*/
+      - deploy_latest:
+          filters:
+            branches:
+              only:
+                - master
