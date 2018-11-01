@@ -1,23 +1,33 @@
 version: 2
+
+defaults: &defaults
+  machine:
+    image: circleci/classic:201708-01
+
+  working_directory: ~/newrelic_prometheus_exporter
+
+docker_setup: &docker_setup
+  run:
+    name: docker setup
+    command: |
+      docker info
+      docker login -u $DOCKER_USER -p $DOCKER_PASS
+
 jobs:
   deploy:
-    machine:
-      image: circleci/classic:201708-01
-    working_directory: ~/newrelic_prometheus_exporter
+    <<: *defaults
     steps:
       - checkout
-
+      - *docker_setup
       - run:
           name: Deploy image to hub
           command: make deploy version=$CIRCLE_TAG
 
   deploy_latest:
-    machine:
-      image: circleci/classic:201708-01
-    working_directory: ~/newrelic_prometheus_exporter
+    <<: *defaults
     steps:
     - checkout
-
+    - *docker_setup
     - run:
         name: Deploy image to hub
         command: make deploy version=latest
@@ -30,7 +40,7 @@ workflows:
       - deploy:
           filters:
             tags:
-              only: /^v.*/
+              only: /.*/
             branches:
               ignore: /.*/
       - deploy_latest:
