@@ -1,0 +1,22 @@
+version: 2
+jobs:
+  deploy:
+    machine:
+      image: circleci/classic:201708-01
+    working_directory: ~/newrelic_prometheus_exporter
+    steps:
+      - checkout
+
+      - run:
+          name: Deploy image to hub
+          command: make deploy version=$CIRCLE_TAG
+
+
+workflows:
+  version: 2
+  ci:
+    jobs:
+      - deploy
+          filters:
+            tags:
+              only: /v[0-9]+(\.[0-9]+)*/
