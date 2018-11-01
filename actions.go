@@ -53,11 +53,12 @@ func (c *Exporter) exportNewrelicMetricData(metricData []JSON) {
 		rawName := metaData["name"].(string)
 		metricName := metricNamespace
 		scope := metaData["scope"].(string)
+		labels := mergeLabels(map[string]string{
+			"scope":       scope,
+			"metric_name": rawName,
+		}, Config.getGlobalLabel())
+
 		for i := range details {
-			labels := map[string]string{
-				"scope":       scope,
-				"metric_name": rawName,
-			}
 			labels["metric_type"] = detailsLabelName[i]
 			gauge, err := c.Gauges.Get(metricName, labels, "Newrelic metrics")
 			if err == nil {
@@ -71,12 +72,5 @@ func (c *Exporter) exportNewrelicMetricData(metricData []JSON) {
 }
 
 func analyticData(res http.ResponseWriter, req *http.Request) bool {
-	log.Info("Handling analytic_event_data")
-	requestBody, err := parseRequestBody(req)
-	if err != nil {
-		log.Printf("Error reading analytic_event_data: %v", err)
-	} else {
-		log.Info("analytic_event_data:", requestBody)
-	}
 	return true
 }

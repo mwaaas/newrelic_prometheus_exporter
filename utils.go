@@ -83,3 +83,12 @@ func getEnv(key string, defaultValue interface{}) interface{} {
 	}
 	return defaultValue
 }
+
+func mergeLabels(labelOne, labelTwo map[string]string) map[string]string {
+	result := labelOne
+
+	for key, value := range labelTwo {
+		result[key] = value
+	}
+	return result
+}
