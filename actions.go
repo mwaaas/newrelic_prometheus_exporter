@@ -53,6 +53,10 @@ func (c *Exporter) exportNewrelicMetricData(metricData []JSON) {
 		rawName := metaData["name"].(string)
 		metricName := metricNamespace
 		scope := metaData["scope"].(string)
+
+		if scope == "" {
+			scope = "null"
+		}
 		labels := mergeLabels(map[string]string{
 			"scope":       scope,
 			"metric_name": rawName,
