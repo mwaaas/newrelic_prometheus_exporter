@@ -8,7 +8,6 @@ import (
 	"hash/fnv"
 )
 
-
 var (
 	hash   = fnv.New64a()
 	strBuf bytes.Buffer // Used for hashing.
@@ -33,12 +32,14 @@ func hashNameAndLabels(name string, labels prometheus.Labels) uint64 {
 type Exporter struct {
 	Counters   *CounterContainer
 	Gauges     *GaugeContainer
+	Histograms *HistogramContainer
 }
 
 func NewExporter() *Exporter {
 	return &Exporter{
 		Counters:   NewCounterContainer(),
 		Gauges:     NewGaugeContainer(),
+		Histograms: NewHistogramContainer(),
 	}
 }
 
@@ -94,4 +95,33 @@ func (c *GaugeContainer) Get(metricName string, labels prometheus.Labels, help s
 		c.Elements[hash] = gauge
 	}
 	return gauge, nil
+}
+
+type HistogramContainer struct {
+	Elements map[uint64]prometheus.Histogram
+}
+
+func NewHistogramContainer() *HistogramContainer {
+	return &HistogramContainer{
+		Elements: make(map[uint64]prometheus.Histogram),
+	}
+}
+
+func (c *HistogramContainer) Get(metricName string, labels prometheus.Labels, help string) (prometheus.Histogram, error) {
+	hash := hashNameAndLabels(metricName, labels)
+	histogram, ok := c.Elements[hash]
+
+	if !ok {
+		histogram = prometheus.NewHistogram(prometheus.HistogramOpts{
+			Name:        metricName,
+			Help:        help,
+			ConstLabels: labels,
+			Buckets:     []float64{1, 2, 5, 10, 20, 60},
+		})
+		if err := prometheus.Register(histogram); err != nil {
+			return nil, err
+		}
+		c.Elements[hash] = histogram
+	}
+	return histogram, nil
 }

@@ -45,30 +45,55 @@ func (c *Exporter) handleMetricData(res http.ResponseWriter, req *http.Request) 
 }
 
 func (c *Exporter) exportNewrelicMetricData(metricData []JSON) {
+	// for more info on how the metric data is structured have a look at this link
+	// https://www.evernote.com/shard/s496/sh/82da8165-9fbd-4412-9e79-d70ea70dce5a/081a9b844ccc0cd62139544400b5ccee
+
+	// metrics start from index 3.
+	// index 0 is the token sent by agent.
+	// index 1 and 2 are start and end time when the data was sent by agent
 	metrics := metricData[3].([]interface{})
+
+	// we loop all metrics and add them to our prometheus container
 	for i := range metrics {
+		// metrics are in list
+		// we convert it to a list of interface for easy manipulation
 		metric := metrics[i].([]interface{})
-		metaData := metric[0].(map[string]interface{})
-		details := metric[1].([]interface{})
-		rawName := metaData["name"].(string)
-		metricName := metricNamespace
-		scope := metaData["scope"].(string)
+
+		// each metric has two values
+		// metric details and metric data
+		metricMetaData := metric[0].(map[string]interface{})
+
+		// metric actual data
+		metricData := metric[1].([]interface{})
+
+		// get the metric name
+		metricName := metricMetaData["name"].(string)
+		//
+		scope := metricMetaData["scope"].(string)
 
 		if scope == "" {
 			scope = "null"
 		}
+
+		// labels to use in prometheus
 		labels := mergeLabels(map[string]string{
 			"scope":       scope,
-			"metric_name": rawName,
+			"metric_name": metricName,
 		}, Config.getGlobalLabel())
 
-		for i := range details {
+		// each metric contains multiple metrics
+		// to see all metrics in detailsLabelName
+		for i := range metricData {
+			// get the metric type based on index
 			labels["metric_type"] = detailsLabelName[i]
-			gauge, err := c.Gauges.Get(metricName, labels, "Newrelic metrics")
+
+			// adding metric to be added scrapped
+			histogram, err := c.Histograms.Get(metricNamespace, labels, "Newrelic metrics (histogram)")
 			if err == nil {
-				gauge.Set(details[i].(float64))
+				histogram.Observe(metricData[i].(float64))
 			} else {
-				fmt.Println("original meta data:", metaData)
+				// Todo this should be sent to sentry
+				fmt.Println("original meta data:", metricData)
 				fmt.Println("err:", err)
 			}
 		}
