@@ -7,6 +7,8 @@ services:
       target: build-env
     volumes:
       - ./:/usr/src/app
+    environment:
+      - Port=80
     ports:
       - 8092:80
 
@@ -14,5 +16,7 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+    environment:
+      - Port=80
     ports:
       - 8080:80
